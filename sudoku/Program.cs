@@ -299,7 +299,7 @@ namespace sudoku
                             }
                             else
                             {
-                                if (mutacion < 7 && usarMejor)
+                                if (mutacion < 5 && usarMejor)
                                 {
                                     retorno.filas[i, j] = A[i, j];
                                 }
@@ -468,6 +468,7 @@ namespace sudoku
             public List<poblacion> poblaciones;
             public int cantidadPoblaciones = 0;
             public int cantidadSoluciones = 0;
+            public int[,] Base;
 
             public int posicionMejorResultado = 0;
 
@@ -475,6 +476,7 @@ namespace sudoku
             {
                 this.cantidadPoblaciones = cantidadPoblaciones;
                 this.cantidadSoluciones = cantidadPoblaciones;
+                this.Base = Base;
                 poblaciones = new List<poblacion>();
 
                 for (int i = 0; i < cantidadPoblaciones; i++) 
@@ -531,7 +533,7 @@ namespace sudoku
 
             }
 
-            private int[,] limpiar(int[,] p)
+            public int[,] limpiar(int[,] p)
             {
                 int [,] retorno = new int[9,9];
 
@@ -567,7 +569,7 @@ namespace sudoku
                     {
                         foreach (int repetido in repetidos) 
                         {
-                            if (p[i, j] == repetido) 
+                            if (p[i, j] == repetido && Base[i,j]==0) 
                             {
                                 retorno[i, j] = 0;
                             }
@@ -598,7 +600,7 @@ namespace sudoku
                     {
                         foreach (int repetido in repetidos)
                         {
-                            if (p[i, j] == repetido)
+                            if (p[i, j] == repetido && Base[i, j] == 0)
                             {
                                 retorno[i, j] = 0;
                             }
@@ -637,7 +639,7 @@ namespace sudoku
                             int y = j * 3 + k / 3;
                             foreach (int repetido in repetidos)
                             {
-                                if (p[x, y] == repetido)
+                                if (p[x, y] == repetido && Base[x,y] == 0)
                                 {
                                     retorno[x, y] = 0;
                                 }
@@ -666,16 +668,19 @@ namespace sudoku
                 {
                 }
                 int retorno = temp.evaluar();
-                if (retorno == 0) 
+                if (retorno == 0)
                 {
                     poblaciones[0].soluciones[0].filas = temp.filas;
                 }
+
                 return retorno;
             }
         }
 
         static void Main(string[] args)
         {
+            /*
+            //Nivel medio
             int[,] Base = {{0,4,0,1,0,0,0,2,0},
                             {0,0,2,9,4,7,1,0,6},
                             {0,9,0,6,5,2,0,0,0},
@@ -686,6 +691,18 @@ namespace sudoku
                             {5,0,6,3,1,4,9,0,0},
                             {0,8,0,0,0,6,0,4,0}};
 
+             * //*/
+
+            //Nivel Alto
+            int[,] Base = {{0,0,0,0,0,3,0,6,0},
+                            {2,0,5,0,0,0,0,0,0},
+                            {0,0,3,0,9,0,7,2,0},
+                            {6,0,0,1,0,9,0,0,0},
+                            {0,0,7,0,0,0,1,0,0},
+                            {0,0,0,6,0,5,0,0,7},
+                            {0,5,2,0,6,0,9,0,0},
+                            {0,4,0,9,0,0,5,0,3},
+                            {0,0,0,0,0,0,0,0,0}};
             imprimir(Base);
             solucion temp = new solucion(Base);
 
@@ -693,7 +710,7 @@ namespace sudoku
 
             Console.ReadLine();
             Console.Clear();
-
+            
             while (temp.intentarSolucionar() && intentos<0) 
             {
                 imprimir(temp.filas);
@@ -705,11 +722,11 @@ namespace sudoku
             
             Console.WriteLine("\n\nEsta es la mejor solución encontrada en forma normal. Presione para comenzar algoritmo genético");
             Console.ReadLine();
-
+            
             //algoritmo genético
 
-            int cantidadSoluciones = 2000;
-            int cantidadPoblaciones = 30;
+            int cantidadSoluciones = 600;
+            int cantidadPoblaciones = 100;
 
             planeta Planeta = new planeta(cantidadPoblaciones, cantidadSoluciones, temp.filas);
 
@@ -746,6 +763,7 @@ namespace sudoku
                 }
 
                 Planeta.ingresarTuristas();
+                
             }
             Console.WriteLine("Mejor solución encontrada: ");
             Console.WriteLine();
