@@ -10,15 +10,19 @@ namespace sudoku
     {
         class solucion
         {
-            public static int[,] Base = {{0,4,0,1,0,0,0,2,0},
-                                  {0,0,2,9,4,7,1,0,6},
-                                  {0,9,0,6,5,2,0,0,0},
-                                  {2,3,0,0,0,1,4,6,0},
-                                  {0,0,4,2,8,5,7,0,0},
-                                  {0,7,8,4,0,0,0,1,5},
-                                  {0,0,3,8,7,9,0,5,0},
-                                  {5,0,6,3,1,4,9,0,0},
-                                  {0,8,0,0,0,6,0,4,0}};
+            public solucion(int[,] Base) 
+            {
+                this.Base = Base;
+                for (int i = 0; i < 9; i++) 
+                {
+                    for (int j = 0; j < 9; j++) 
+                    {
+                        filas[i, j] = Base[i, j];
+                    }
+                }
+            }
+
+            public int[,] Base;
 
             /*
             static int[,] Base = {{0,4,0,1,0,0,0,2,0},
@@ -56,8 +60,6 @@ namespace sudoku
                     resultado += listaHorizontal.Count;
                     resultado += listaVertical.Count;
                 }
-
-
 
                 List<int> lista1 = new List<int>();
                 List<int> lista2 = new List<int>();
@@ -230,14 +232,53 @@ namespace sudoku
                 }
             }
 
-            public static int[,] descendencia(int[,] A, int[,] B)
+            public static int[,] descendenciaNormal(int[,] A, int[,] B, int[,] C, int[,] D, int [,] Base)
+            {
+                solucion retorno = new solucion(Base);
+                Random rand = new Random(DateTime.Now.Millisecond*DateTime.Now.Millisecond);
+
+                for (int i = 0; i < 9; i++)
+                {
+                    for (int j = 0; j < 9; j++)
+                    {
+                        if (Base[i, j] != 0)
+                        {
+                            retorno.filas[i, j] = Base[i, j];
+                        }
+                        else
+                        {
+                            int num = rand.Next();
+                            if (num % 4 == 0)
+                            {
+                                retorno.filas[i, j] = A[i, j];
+                            }
+                            else if (num % 4 == 1)
+                            {
+                                retorno.filas[i, j] = A[i, j];
+                            }
+                            else if (num % 4 == 2)
+                            {
+                                retorno.filas[i, j] = A[i, j];
+                            }
+                            else
+                            {
+                                retorno.filas[i, j] = A[i, j];
+                            }
+                        }
+                    }
+                }
+
+                return retorno.filas;
+            }
+
+            public static int[,] descendencia(int[,] A, int[,] B, bool usarMejor, int [,] Base)
             {
                 Random rand = new Random(DateTime.Now.Millisecond);
                 Random rand2 = new Random(DateTime.Now.Millisecond * DateTime.Now.Second);
                 Random rand3 = new Random(DateTime.Now.Second);
                 Random rand4 = new Random(DateTime.Now.Millisecond - DateTime.Now.Second);
 
-                solucion retorno = new solucion();
+                solucion retorno = new solucion(Base);
 
                 for (int i = 0; i < 9; i++)
                 {
@@ -258,7 +299,7 @@ namespace sudoku
                             }
                             else
                             {
-                                if (mutacion < 7)
+                                if (mutacion < 7 && usarMejor)
                                 {
                                     retorno.filas[i, j] = A[i, j];
                                 }
@@ -274,7 +315,7 @@ namespace sudoku
                 return retorno.filas;
             }
 
-            public static bool intentarSolucionar(int[,] problema) 
+            public bool intentarSolucionar() 
             {
                 bool hayCambios = false;
 
@@ -282,29 +323,29 @@ namespace sudoku
                 {
                     for (int j = 0; j < 9; j++)
                     {
-                        if (problema[i, j] == 0) 
+                        if (filas[i, j] == 0) 
                         {
                             List<int> lista = new List<int>{ 1, 2, 3, 4, 5, 6, 7, 8, 9 };
                             for (int k = 0; k < 9; k++) 
                             {
-                                if (k != j && problema[i, k] != 0) 
+                                if (k != j && filas[i, k] != 0) 
                                 {
-                                    lista.Remove(problema[i,k]);
+                                    lista.Remove(filas[i,k]);
                                 }
-                                if (k != i && problema[k, j] != 0)
+                                if (k != i && filas[k, j] != 0)
                                 {
-                                    lista.Remove(problema[k,j]);
+                                    lista.Remove(filas[k,j]);
                                 }
                                 int x = (i / 3)*3 + k % 3;
                                 int y = (j / 3)*3 + k / 3;
-                                if (problema[x,y]!=0) 
+                                if (filas[x,y]!=0) 
                                 {
-                                    lista.Remove(problema[x, y]);
+                                    lista.Remove(filas[x, y]);
                                 }
                             }
                             if (lista.Count == 1) 
                             {
-                                problema[i, j] = lista[0];
+                                filas[i, j] = lista[0];
                                 hayCambios = true;
                             }
                         }
@@ -314,67 +355,62 @@ namespace sudoku
             }
         }
 
-
-        static void Main(string[] args)
+        class poblacion 
         {
-            imprimir(solucion.Base);
-            int[,] temp = solucion.Base;            
-            
-            while (solucion.intentarSolucionar(temp)) 
+            public List<solucion> soluciones;
+            private int cantidadSoluciones;
+            public int vueltas = 0;
+            public int posicionMejorSolucionA = 0;
+            public int mejorEvaluacionA = 0;
+            public int posicionMejorSolucionB = 0;
+            public int mejorEvaluacionB = 0;
+
+            public int tipoEvaluacion = 0;
+
+            public poblacion(int cantidadSoluciones, int[,] Base) 
             {
-                imprimir(temp);
-                Console.ReadLine();
-            }
-            imprimir(temp);
-
-            solucion.Base = temp;
-            Console.WriteLine("Máxima solución encontrada en forma normal. Presione para comenzar algoritmo genético");
-            Console.ReadLine();
-
-
-            int cantidadSoluciones = 5000;
-
-            List<solucion> soluciones = new List<solucion>();
-            for (int i = 0; i < cantidadSoluciones; i++) 
-            {
-                solucion nueva = new solucion();
-                nueva.generar();
-                soluciones.Add(nueva);
+                this.cantidadSoluciones = cantidadSoluciones;
+                soluciones = new List<solucion>();
+                for (int i = 0; i < cantidadSoluciones; i++)
+                {
+                    solucion nueva = new solucion(Base);
+                    nueva.generar();
+                    soluciones.Add(nueva);
+                }
             }
 
-            bool continuar=true;
-            int vueltas = 0;
-            int posicionMejorSolucionA = 0;
-            int posicionMejorSolucion = 0;
-
-            while (continuar) 
+            public poblacion(int cantidadSoluciones, int tipoEvaluacion, int [,] Base) : this(cantidadSoluciones, Base)
             {
-                int mejorEvaluacion = soluciones[0].evaluar();
+                this.tipoEvaluacion = tipoEvaluacion;                
+            }
 
+            internal bool aplicarCiclo()
+            {
                 posicionMejorSolucionA = 0;
-                int mejorEvaluacionA = mejorEvaluacion;
+                mejorEvaluacionA = soluciones[0].evaluar();
 
-                int posicionMejorSolucionB = 0;
-                int mejorEvaluacionB = mejorEvaluacionA;
+                posicionMejorSolucionB = 0;
+                mejorEvaluacionB = mejorEvaluacionA;
 
-                for (int i = 1; i < cantidadSoluciones; i++) 
+                //se evaluan las soluciones:
+                for (int i = 1; i < cantidadSoluciones; i++)
                 {
                     int evaluacionA = 1000;
                     int evaluacion = 1000;
 
                     evaluacion = soluciones[i].evaluar();
 
-                    if (vueltas % 100 < 70)
+                    if (tipoEvaluacion==0)
                     {
                         evaluacionA = soluciones[i].evaluar();
                     }
                     else
                     {
-                        if (vueltas % 100 < 80)
+                        if (tipoEvaluacion==1)
                         {
                             evaluacionA = soluciones[i].evaluarHorizontal();
                         }
-                        else if (vueltas % 100 < 90)
+                        else if (tipoEvaluacion==2)
                         {
                             evaluacionA = soluciones[i].evaluarVertical();
                         }
@@ -382,12 +418,10 @@ namespace sudoku
                         {
                             evaluacionA = soluciones[i].evaluarCuadros();
                         }
-                        
                     }
 
-                    if ( evaluacionA < mejorEvaluacionA)
+                    if (evaluacionA < mejorEvaluacionA)
                     {
-                        if (vueltas % 100 < 70) posicionMejorSolucion = i;
                         mejorEvaluacionA = evaluacionA;
                         posicionMejorSolucionA = i;
                     }
@@ -397,35 +431,328 @@ namespace sudoku
                         posicionMejorSolucionB = i;
                     }
                 }
-                if (vueltas % 5 == 0) 
-                {
-                    Console.Clear();
-                    imprimir(soluciones[posicionMejorSolucionA].filas);
-                    Console.WriteLine();
-                    Console.WriteLine("Evaluación A: " + mejorEvaluacionA);
-                    imprimir(soluciones[posicionMejorSolucionB].filas);
-                    Console.WriteLine();
-                    Console.WriteLine("Evaluación B: " + mejorEvaluacionB);
-                    Console.WriteLine();
-                    Console.WriteLine("Vueltas: " + vueltas);
-                    //Console.ReadLine();
-                }
                 vueltas++;
 
                 if (mejorEvaluacionA > 0)
                 {
                     for (int i = 0; i < cantidadSoluciones; i++)
                     {
-                        if (i != posicionMejorSolucionA && i!=posicionMejorSolucion)
-                            soluciones[i].filas = solucion.descendencia(soluciones[posicionMejorSolucionA].filas, soluciones[posicionMejorSolucionB].filas);
+                        if (i != posicionMejorSolucionA && i!=posicionMejorSolucionB)
+                            soluciones[i].filas = solucion.descendencia(soluciones[posicionMejorSolucionA].filas, soluciones[posicionMejorSolucionB].filas, vueltas%5==0, soluciones[0].Base);
                     }
+                    return false;
+                    //Indica que no se ha encontrado la solución
                 }
-                else                 
+                else
                 {
-                    continuar = false;
+                    return true;
+                    //Indica que se ha encontrado la solución
                 }
             }
-            imprimir(soluciones[posicionMejorSolucionA].filas);
+
+
+            internal void cruzar(poblacion poblacion, poblacion poblacion2, poblacion poblacion3)
+            {
+                for(int i=0;i<cantidadSoluciones;i++)
+                {
+                    if (i != posicionMejorSolucionA)
+                    {
+                        soluciones[i].filas = solucion.descendenciaNormal(soluciones[posicionMejorSolucionA].filas, poblacion.soluciones[poblacion.posicionMejorSolucionA].filas, poblacion2.soluciones[poblacion.posicionMejorSolucionA].filas, poblacion3.soluciones[poblacion.posicionMejorSolucionA].filas, soluciones[0].Base);
+                    }
+                }
+            }
+        }
+
+        class planeta
+        {
+            public List<poblacion> poblaciones;
+            public int cantidadPoblaciones = 0;
+            public int cantidadSoluciones = 0;
+
+            public int posicionMejorResultado = 0;
+
+            public planeta(int cantidadPoblaciones, int cantidadSoluciones, int[,] Base)
+            {
+                this.cantidadPoblaciones = cantidadPoblaciones;
+                this.cantidadSoluciones = cantidadPoblaciones;
+                poblaciones = new List<poblacion>();
+
+                for (int i = 0; i < cantidadPoblaciones; i++) 
+                {
+                    poblaciones.Add(new poblacion(cantidadSoluciones, i%4, Base));
+                }
+            }
+
+            internal bool iteracion()
+            {
+
+                bool retorno = false;//indica si se encontró una solución
+                int posicion = 0;                
+
+                while (!retorno && posicion<poblaciones.Count) 
+                {
+                    retorno = poblaciones[posicion].aplicarCiclo();
+                    if (poblaciones[posicion].mejorEvaluacionA < poblaciones[posicionMejorResultado].mejorEvaluacionA
+                        && poblaciones[posicion].tipoEvaluacion==0) 
+                    {
+                        posicionMejorResultado = posicion;
+                    }
+                    posicion++;
+                }
+
+                return retorno;
+            }
+
+            internal void ingresarTuristas()
+            {
+                if (poblaciones.Count < 2) return;
+                Random rand = new Random(DateTime.Now.Millisecond);
+                int elegido = rand.Next() % cantidadPoblaciones;
+                int pareja1 = rand.Next() % cantidadPoblaciones;
+                int pareja2 = rand.Next() % cantidadPoblaciones;
+                int pareja3 = rand.Next() % cantidadPoblaciones;
+
+                while (elegido == pareja1) 
+                {
+                    elegido = rand.Next() % cantidadPoblaciones;
+                }
+
+                poblaciones[elegido].cruzar(poblaciones[pareja1], poblaciones[pareja2], poblaciones[pareja3]);
+            }
+
+            internal int[,] mejorSolucion()
+            {
+                return poblaciones[posicionMejorResultado].soluciones[poblaciones[posicionMejorResultado].posicionMejorSolucionA].filas;
+            }
+
+            internal int[,] mejorSolucionLimpia()
+            {
+                return limpiar(poblaciones[posicionMejorResultado].soluciones[poblaciones[posicionMejorResultado].posicionMejorSolucionA].filas);
+
+            }
+
+            private int[,] limpiar(int[,] p)
+            {
+                int [,] retorno = new int[9,9];
+
+                //Se copian los valores
+                for (int i = 0; i < 9; i++)
+                {
+                    for (int j = 0; j < 9; j++) 
+                    {
+                        retorno[i, j] = p[i, j];
+                    }
+                }
+
+                //Se limpian en forma horizontal:
+                for (int i = 0; i < 9; i++) 
+                {
+                    List<int> numeros = new List<int>();
+                    List<int> repetidos = new List<int>();
+                    for (int j = 0; j < 9; j++) 
+                    {
+                        if (numeros.Contains(p[i, j]))
+                        {
+                            if (!repetidos.Contains(p[i, j]))
+                            {
+                                repetidos.Add(p[i, j]);
+                            }
+                        }
+                        else 
+                        {
+                            numeros.Add(p[i,j]);
+                        }
+                    }
+                    for (int j = 0; j < 9; j++)
+                    {
+                        foreach (int repetido in repetidos) 
+                        {
+                            if (p[i, j] == repetido) 
+                            {
+                                retorno[i, j] = 0;
+                            }
+                        }
+                    }
+                }
+
+                //Se limpian en forma vertical
+                for (int j = 0; j < 9; j++)
+                {
+                    List<int> numeros = new List<int>();
+                    List<int> repetidos = new List<int>();
+                    for (int i = 0; i < 9; i++)
+                    {
+                        if (numeros.Contains(p[i, j]))
+                        {
+                            if (!repetidos.Contains(p[i, j]))
+                            {
+                                repetidos.Add(p[i, j]);
+                            }
+                        }
+                        else
+                        {
+                            numeros.Add(p[i, j]);
+                        }
+                    }
+                    for (int i = 0; i < 9; i++)
+                    {
+                        foreach (int repetido in repetidos)
+                        {
+                            if (p[i, j] == repetido)
+                            {
+                                retorno[i, j] = 0;
+                            }
+                        }
+                    }
+                }
+
+                //Se limpian en cuadrados de a 9:
+                for (int i = 0; i < 3; i++)
+                {
+                    for (int j = 0; j < 3; j++)
+                    {
+                        List<int> numeros = new List<int>();
+                        List<int> repetidos = new List<int>();
+                        for (int k = 0; k < 9; k++) 
+                        {
+                            int x = i  * 3 + k%3;
+                            int y = j  * 3 + k/3;
+
+                            if (numeros.Contains(p[x, y]))
+                            {
+                                if (!repetidos.Contains(p[x, y]))
+                                {
+                                    repetidos.Add(p[x, y]);
+                                }
+                            }
+                            else
+                            {
+                                numeros.Add(p[x, y]);
+                            }
+                        }
+
+                        for (int k = 0; k < 9; k++)
+                        {
+                            int x = i * 3 + k % 3;
+                            int y = j * 3 + k / 3;
+                            foreach (int repetido in repetidos)
+                            {
+                                if (p[x, y] == repetido)
+                                {
+                                    retorno[x, y] = 0;
+                                }
+                            }
+                        }
+                    }
+                }
+
+
+                return retorno;
+            }
+
+            internal int[,] solucionar(int[,] p)
+            {
+                solucion temp = new solucion(p);
+                while (temp.intentarSolucionar()) 
+                {
+                }
+                return temp.filas;
+            }
+
+            internal int solucionarYEvaluar(int[,] p)
+            {
+                solucion temp = new solucion(p);
+                while (temp.intentarSolucionar())
+                {
+                }
+                int retorno = temp.evaluar();
+                if (retorno == 0) 
+                {
+                    poblaciones[0].soluciones[0].filas = temp.filas;
+                }
+                return retorno;
+            }
+        }
+
+        static void Main(string[] args)
+        {
+            int[,] Base = {{0,4,0,1,0,0,0,2,0},
+                            {0,0,2,9,4,7,1,0,6},
+                            {0,9,0,6,5,2,0,0,0},
+                            {2,3,0,0,0,1,4,6,0},
+                            {0,0,4,2,8,5,7,0,0},
+                            {0,7,8,4,0,0,0,1,5},
+                            {0,0,3,8,7,9,0,5,0},
+                            {5,0,6,3,1,4,9,0,0},
+                            {0,8,0,0,0,6,0,4,0}};
+
+            imprimir(Base);
+            solucion temp = new solucion(Base);
+
+            int intentos = 0;
+
+            Console.ReadLine();
+            Console.Clear();
+
+            while (temp.intentarSolucionar() && intentos<0) 
+            {
+                imprimir(temp.filas);
+                intentos++;
+                Console.ReadLine();
+                Console.Clear();
+            }
+            imprimir(temp.filas);
+            
+            Console.WriteLine("\n\nEsta es la mejor solución encontrada en forma normal. Presione para comenzar algoritmo genético");
+            Console.ReadLine();
+
+            //algoritmo genético
+
+            int cantidadSoluciones = 2000;
+            int cantidadPoblaciones = 30;
+
+            planeta Planeta = new planeta(cantidadPoblaciones, cantidadSoluciones, temp.filas);
+
+            bool continuar=true;
+
+            while (continuar) 
+            {
+                continuar = !Planeta.iteracion();
+
+                if (Planeta.poblaciones[0].vueltas % 1 == 0)
+                {
+                    Console.Clear();
+                    Console.WriteLine("Mejor solución: ");
+                    imprimir(Planeta.mejorSolucion());
+                    Console.WriteLine("\nMejor solución limpia: ");
+                    imprimir(Planeta.mejorSolucionLimpia());
+                    Console.WriteLine("\nMejor solución limpia solucionada: ");
+                    imprimir(Planeta.solucionar(Planeta.mejorSolucionLimpia()));
+
+                    int puntuacionSolucionada = Planeta.solucionarYEvaluar(Planeta.mejorSolucionLimpia());
+
+                    Console.WriteLine("\nPuntuación mejor solución limpia solucionada: " + puntuacionSolucionada);
+                    
+                    Console.WriteLine();
+                    Console.WriteLine("Mejor evaluación: " + Planeta.poblaciones[Planeta.posicionMejorResultado].mejorEvaluacionA);
+                    Console.WriteLine("Planeta con mejor evaluación: " + Planeta.posicionMejorResultado);
+                    Console.WriteLine();
+                    Console.WriteLine("Vueltas: " + Planeta.poblaciones[0].vueltas);
+                    Console.WriteLine();
+                    /*for (int i = 0; i < cantidadPoblaciones; i++) 
+                    {
+                        Console.WriteLine("Mejor evaluación N° " + i + ": " + Planeta.poblaciones[i].mejorEvaluacionA);
+                    }//*/
+                }
+
+                Planeta.ingresarTuristas();
+            }
+            Console.WriteLine("Mejor solución encontrada: ");
+            Console.WriteLine();
+            imprimir(Planeta.mejorSolucion());
+            Console.WriteLine();
+            Console.WriteLine("Cantidad de vueltas: " + Planeta.poblaciones[0].vueltas);
+            Console.ReadLine();
             Console.ReadLine();
         }
 
